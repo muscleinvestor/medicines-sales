@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>의약품 데이터 분석기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+    --border: #2e3250; --accent: #6c8aff; --accent2: #a78bfa;
+    --text: #e2e8f0; --text2: #94a3b8; --green: #34d399; --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 18px; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: var(--accent); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+  /* Upload */
+  .upload-zone { border: 2px dashed var(--border); border-radius: 16px; padding: 48px; text-align: center; cursor: pointer; transition: all .2s; background: var(--surface); }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(108,138,255,.07); }
+  .upload-icon { font-size: 48px; margin-bottom: 12px; }
+  .upload-zone h2 { font-size: 18px; margin-bottom: 8px; }
+  .upload-zone p { color: var(--text2); font-size: 13px; }
+  .upload-btn { margin-top: 16px; background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  #fileInput { display: none; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .stat-val { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  /* Main layout */
+  .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+  @media(max-width:900px) { .main-grid { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(2,1fr); } }
+
+  /* Table */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .panel-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 14px; font-weight: 600; }
+  .table-wrap { overflow: auto; max-height: 340px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); padding: 10px 12px; text-align: left; color: var(--text2); font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tr:hover td { background: var(--surface2); }
+  .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Search/filter */
+  .filter-bar { display: flex; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .filter-bar input, .filter-bar select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+  .filter-bar input { flex: 1; min-width: 140px; }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+
+  /* AI Chat */
+  .chat-panel { display: flex; flex-direction: column; height: 100%; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 300px; max-height: 400px; }
+  .msg { padding: 10px 13px; border-radius: 10px; font-size: 13px; line-height: 1.5; max-width: 95%; }
+  .msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
+  .msg.ai { background: var(--surface2); border: 1px solid var(--border); align-self: flex-start; border-radius: 10px 10px 10px 2px; }
+  .msg.ai .thinking { color: var(--text2); font-style: italic; font-size: 12px; }
+  .chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+  .chat-input-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 13px; border-radius: 8px; font-size: 13px; outline: none; }
+  .chat-input-row input:focus { border-color: var(--accent); }
+  .send-btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Quick prompts */
+  .quick-prompts { padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--border); }
+  .qp { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all .15s; }
+  .qp:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Chart */
+  .chart-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .chart-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .chart-toolbar select, .chart-toolbar input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 7px; font-size: 12px; outline: none; }
+  .chart-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 6px 12px; border-radius: 7px; cursor: pointer; font-size: 12px; transition: all .15s; }
+  .chart-btn:hover, .chart-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  canvas { max-height: 320px; }
+
+  .empty { text-align: center; color: var(--text2); padding: 40px; font-size: 13px; }
+  .tag { display: inline-block; background: rgba(108,138,255,.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 4px; }
+
+  .col-picker { padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text2); }
+  .col-picker span { cursor: pointer; margin-right: 8px; padding: 3px 8px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); display: inline-block; margin-bottom: 4px; }
+  .col-picker span.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>💊</div>
+  <h1>의약품 데이터 분석기</h1>
+  <span class="badge">AI powered</span>
+</div>
+
+<div class="container">
+  <!-- Upload -->
+  <div id="uploadSection">
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📂</div>
+      <h2>엑셀 파일을 업로드하세요</h2>
+      <p>.xlsx / .xls 파일을 드래그하거나 클릭하여 선택</p>
+      <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">파일 선택</button>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+
+  <!-- Data Section (hidden until file loaded) -->
+  <div id="dataSection" style="display:none">
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="main-grid">
+      <!-- Left: Table -->
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📋 데이터 테이블</span>
+            <span id="rowCount" style="font-size:12px;color:var(--text2)"></span>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="🔍 검색...">
+            <select id="sheetSelect" style="display:none"></select>
+          </div>
+          <div class="col-picker" id="colPicker"></div>
+          <div class="table-wrap" id="tableWrap"></div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-panel" id="chartPanel" style="display:none">
+          <div class="panel-header" style="padding:0 0 12px 0;border:none">
+            <span class="panel-title">📊 차트</span>
+          </div>
+          <div class="chart-toolbar">
+            <select id="chartXCol"></select>
+            <select id="chartYCol"></select>
+            <button class="chart-btn active" id="btnBar" onclick="setChartType('bar')">막대</button>
+            <button class="chart-btn" id="btnLine" onclick="setChartType('line')">꺾은선</button>
+            <button class="chart-btn" id="btnPie" onclick="setChartType('pie')">파이</button>
+            <button class="chart-btn" id="btnDoughnut" onclick="setChartType('doughnut')">도넛</button>
+            <button class="chart-btn" style="margin-left:auto" onclick="renderChart()">🔄 갱신</button>
+          </div>
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Right: AI Chat -->
+      <div class="panel chat-panel">
+        <div class="panel-header">
+          <span class="panel-title">🤖 AI 분석 도우미</span>
+        </div>
+        <div class="quick-prompts">
+          <span class="qp" onclick="sendQuick(this)">분류별 판매금액 합계</span>
+          <span class="qp" onclick="sendQuick(this)">판매량 상위 10개</span>
+          <span class="qp" onclick="sendQuick(this)">전체 통계 요약</span>
+          <span class="qp" onclick="sendQuick(this)">컬럼 목록 알려줘</span>
+          <span class="qp" onclick="sendQuick(this)">판매금액 기준 정렬</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg ai">📂 파일이 로드되었습니다! 데이터에 대해 자유롭게 질문하세요.<br><br>예시:<br>• "분류별 판매금액 합계 보여줘"<br>• "가장 많이 팔린 의약품 TOP 10"<br>• "전체 데이터 통계 요약해줘"</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="질문을 입력하세요..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let workbook = null, allData = [], filteredData = [], columns = [], activeSheet = '', chartInst = null, chartType = 'bar';
+let visibleCols = [];
+
+// Upload
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    workbook = XLSX.read(e.target.result, { type: 'array' });
+    const sheets = workbook.SheetNames;
+    const sel = document.getElementById('sheetSelect');
+    sel.innerHTML = sheets.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (sheets.length > 1) sel.style.display = '';
+    sel.onchange = () => loadSheet(sel.value);
+    loadSheet(sheets[0]);
+    document.getElementById('uploadSection').style.display = 'none';
+    document.getElementById('dataSection').style.display = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheet(name) {
+  activeSheet = name;
+  const ws = workbook.Sheets[name];
+  const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  if (!raw.length) return;
+  allData = raw;
+  columns = Object.keys(raw[0]);
+  visibleCols = [...columns];
+  filteredData = [...allData];
+  renderColPicker();
+  renderTable(filteredData);
+  renderStats();
+  setupChart();
+  document.getElementById('chartPanel').style.display = '';
+}
+
+function renderColPicker() {
+  const cp = document.getElementById('colPicker');
+  cp.innerHTML = '<span style="color:var(--text2);cursor:default;background:none;border:none">표시 컬럼: </span>'
+    + columns.map(c => `<span class="${visibleCols.includes(c)?'active':''}" onclick="toggleCol('${c}')">${c}</span>`).join('');
+}
+
+function toggleCol(c) {
+  if (visibleCols.includes(c)) { if (visibleCols.length > 1) visibleCols = visibleCols.filter(x => x !== c); }
+  else visibleCols.push(c);
+  renderColPicker();
+  renderTable(filteredData);
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  filteredData = q ? allData.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))) : [...allData];
+  renderTable(filteredData);
+});
+
+function renderTable(data) {
+  const wrap = document.getElementById('tableWrap');
+  document.getElementById('rowCount').textContent = `${data.length.toLocaleString()}행`;
+  if (!data.length) { wrap.innerHTML = '<div class="empty">데이터가 없습니다</div>'; return; }
+  const cols = visibleCols;
+  const head = `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
+  const body = data.slice(0, 500).map(r =>
+    `<tr>${cols.map(c => {
+      const v = r[c];
+      const isNum = typeof v === 'number';
+      return `<td class="${isNum?'col-num':''}">${isNum ? v.toLocaleString() : v}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+  wrap.innerHTML = `<table>${head}<tbody>${body}</tbody></table>`;
+  if (data.length > 500) wrap.innerHTML += `<div style="text-align:center;padding:8px;font-size:12px;color:var(--text2)">상위 500행 표시 중 (전체 ${data.length.toLocaleString()}행)</div>`;
+}
+
+function renderStats() {
+  const numCols = columns.filter(c => typeof allData[0][c] === 'number');
+  const row = document.getElementById('statsRow');
+  const cards = [
+    { label: '총 행 수', val: allData.length.toLocaleString(), sub: '전체 레코드' },
+    { label: '컬럼 수', val: columns.length, sub: columns.slice(0,3).join(', ') + (columns.length>3?'...':'') },
+    ...numCols.slice(0,2).map(c => ({
+      label: c + ' 합계',
+      val: allData.reduce((s,r) => s + (Number(r[c])||0), 0).toLocaleString(),
+      sub: '전체 합산'
+    }))
+  ];
+  row.innerHTML = cards.map(c => `<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-val">${c.val}</div><div class="stat-sub">${c.sub}</div></div>`).join('');
+}
+
+function setupChart() {
+  const xSel = document.getElementById('chartXCol');
+  const ySel = document.getElementById('chartYCol');
+  xSel.innerHTML = columns.map(c => `<option value="${c}">${c}</option>`).join('');
+  const numCols = columns.filter(c => typeof allData[0][c] === 'number');
+  ySel.innerHTML = numCols.map(c => `<option value="${c}">${c}</option>`).join('') || columns.map(c => `<option value="${c}">${c}</option>`).join('');
+  renderChart();
+}
+
+function setChartType(t) {
+  chartType = t;
+  ['Bar','Line','Pie','Doughnut'].forEach(x => document.getElementById('btn'+x).classList.toggle('active', x.toLowerCase()===t));
+  renderChart();
+}
+
+function renderChart(customData) {
+  const xCol = document.getElementById('chartXCol').value;
+  const yCol = document.getElementById('chartYCol').value;
+  const src = customData || filteredData;
+
+  // Aggregate by xCol
+  const agg = {};
+  src.forEach(r => {
+    const k = String(r[xCol] || '(빈값)');
+    agg[k] = (agg[k] || 0) + (Number(r[yCol]) || 0);
+  });
+  let entries = Object.entries(agg).sort((a,b) => b[1]-a[1]).slice(0,20);
+  const labels = entries.map(e => e[0]);
+  const vals = entries.map(e => e[1]);
+
+  const colors = labels.map((_,i) => `hsl(${220 + i*17},70%,60%)`);
+
+  if (chartInst) chartInst.destroy();
+  const ctx = document.getElementById('myChart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type: chartType,
+    data: { labels, datasets: [{ label: yCol, data: vals, backgroundColor: colors, borderColor: colors.map(c=>c.replace('60%','50%')), borderWidth: 1 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+      scales: ['bar','line'].includes(chartType) ? {
+        x: { ticks: { color: '#94a3b8', font:{size:10} }, grid: { color: '#2e3250' } },
+        y: { ticks: { color: '#94a3b8', callback: v => v.toLocaleString() }, grid: { color: '#2e3250' } }
+      } : {}
+    }
+  });
+}
+
+// AI Chat
+async function sendMessage() {
+  const inp = document.getElementById('chatInput');
+  const q = inp.value.trim();
+  if (!q || !allData.length) return;
+  inp.value = '';
+  addMsg(q, 'user');
+  const thinkEl = addMsg('<span class="thinking">⏳ 분석 중...</span>', 'ai');
+  document.getElementById('sendBtn').disabled = true;
+
+  // Build data summary for AI
+  const numCols = columns.filter(c => typeof allData[0][c] === 'number');
+  const sample = allData.slice(0, 30);
+  const colStats = numCols.map(c => {
+    const vals = allData.map(r => Number(r[c])||0);
+    const sum = vals.reduce((a,b)=>a+b,0);
+    return `${c}: 합계=${sum.toLocaleString()}, 평균=${Math.round(sum/vals.length).toLocaleString()}`;
+  }).join('\n');
+
+  const catCols = columns.filter(c => typeof allData[0][c] !== 'number');
+  const catSummary = catCols.slice(0,5).map(c => {
+    const uniq = [...new Set(allData.map(r=>r[c]))].slice(0,10);
+    return `${c}: [${uniq.join(', ')}${uniq.length>=10?'...':''}]`;
+  }).join('\n');
+
+  const prompt = `너는 의약품 판매 데이터 분석 전문가야. 아래 엑셀 데이터를 분석해서 사용자의 질문에 답해줘.
+
+## 데이터 정보
+- 전체 행 수: ${allData.length.toLocaleString()}
+- 컬럼: ${columns.join(', ')}
+
+## 수치형 컬럼 통계
+${colStats}
+
+## 범주형 컬럼 고유값 샘플
+${catSummary}
+
+## 샘플 데이터 (최대 30행)
+${JSON.stringify(sample, null, 1)}
+
+## 사용자 질문
+${q}
+
+## 응답 규칙
+- 한국어로 명확하게 답변
+- 수치는 천단위 콤마 표시
+- 표나 목록이 필요하면 마크다운 사용
+- 차트가 필요하면 마지막에 [CHART:x컬럼명:y컬럼명:차트타입(bar/line/pie/doughnut)] 형식으로 명시 (예: [CHART:분류:판매금액:bar])
+- 간결하고 실용적으로 답변`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b => b.text||'').join('') || '응답을 받지 못했습니다.';
+
+    // Parse chart command
+    const chartMatch = text.match(/\[CHART:([^:]+):([^:]+):([^\]]+)\]/);
+    const cleanText = text.replace(/\[CHART:[^\]]+\]/g, '').trim();
+
+    thinkEl.innerHTML = formatMsg(cleanText);
+
+    if (chartMatch) {
+      const [, xC, yC, ct] = chartMatch;
+      const xColEl = document.getElementById('chartXCol');
+      const yColEl = document.getElementById('chartYCol');
+      // Find best match
+      const findCol = name => columns.find(c => c.includes(name) || name.includes(c)) || columns[0];
+      xColEl.value = findCol(xC);
+      yColEl.value = findCol(yC);
+      chartType = ['bar','line','pie','doughnut'].includes(ct) ? ct : 'bar';
+      setChartType(chartType);
+      document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+  } catch(e) {
+    thinkEl.innerHTML = '⚠️ API 오류: ' + e.message;
+  }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function formatMsg(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
+    .replace(/^#{1,3} (.+)/gm, '<strong style="font-size:14px">$1</strong>');
+}
+
+function addMsg(html, role) {
+  const box = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  el.innerHTML = html;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function sendQuick(el) {
+  document.getElementById('chatInput').value = el.textContent;
+  sendMessage();
+}
+</script>
+</body>
+</html>
