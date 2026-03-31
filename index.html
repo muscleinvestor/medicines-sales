@@ -2,96 +2,88 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>의약품 데이터 분석기</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0f1117;--s1:#1a1d27;--s2:#22263a;--bd:#2e3250;--ac:#6c8aff;--ac2:#a78bfa;--tx:#e2e8f0;--tx2:#94a3b8;--gr:#34d399;--rd:#f87171;--yw:#fbbf24}
-body{background:var(--bg);color:var(--tx);font-family:'Segoe UI',sans-serif;font-size:13px}
-.hdr{background:var(--s1);border-bottom:1px solid var(--bd);padding:12px 20px;display:flex;align-items:center;gap:10px}
+:root{--bg:#0f1117;--s1:#1a1d27;--s2:#22263a;--bd:#2e3250;--ac:#6c8aff;--ac2:#a78bfa;--tx:#e2e8f0;--tx2:#94a3b8;--gr:#34d399}
+body{background:var(--bg);color:var(--tx);font-family:'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
+.hdr{background:var(--s1);border-bottom:1px solid var(--bd);padding:12px 22px;display:flex;align-items:center;gap:10px}
 .hdr h1{font-size:17px;font-weight:700;background:linear-gradient(90deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{background:var(--ac);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
 .wrap{max-width:1500px;margin:0 auto;padding:16px}
 
 /* Upload */
-.upzone{border:2px dashed var(--bd);border-radius:14px;padding:40px;text-align:center;cursor:pointer;background:var(--s1);transition:.2s}
+.upzone{border:2px dashed var(--bd);border-radius:14px;padding:44px;text-align:center;cursor:pointer;background:var(--s1);transition:.2s}
 .upzone:hover,.upzone.drag{border-color:var(--ac);background:rgba(108,138,255,.07)}
-.upzone h2{font-size:17px;margin:10px 0 6px}
-.upzone p{color:var(--tx2);font-size:12px}
-.upbtn{margin-top:14px;background:var(--ac);color:#fff;border:none;padding:9px 22px;border-radius:8px;cursor:pointer;font-weight:600}
+.upbtn{margin-top:14px;background:var(--ac);color:#fff;border:none;padding:9px 22px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
 #fi{display:none}
 
-/* Header row selector */
-.hrow-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:10px;margin:12px 0}
-.hrow-bar label{color:var(--tx2);font-size:12px}
-.hrow-bar select,.hrow-bar input{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:5px 10px;border-radius:7px;font-size:12px;outline:none}
-.hrow-bar button{background:var(--ac);color:#fff;border:none;padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600}
+/* Config bar */
+.cfgbar{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:10px 16px;margin:12px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cfgbar label{font-size:11px;color:var(--tx2)}
+.cfgbar select,.cfgbar input[type=number]{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:5px 9px;border-radius:7px;font-size:12px;outline:none}
+.cfgbtn{background:var(--ac);color:#fff;border:none;padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600}
 
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
-.sc{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:14px}
-.sc-lbl{font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.sc-val{font-size:20px;font-weight:700;color:var(--ac)}
-.sc-sub{font-size:11px;color:var(--tx2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Query builder */
+.qbuilder{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.qbuilder h3{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--ac2)}
+.qrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.qfield{display:flex;flex-direction:column;gap:4px;min-width:130px}
+.qfield label{font-size:11px;color:var(--tx2)}
+.qfield select,.qfield input{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;width:100%}
+.qfield select:focus,.qfield input:focus{border-color:var(--ac)}
+.runbtn{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap;align-self:flex-end}
+.runbtn:hover{opacity:.85}
 
-/* Layout */
-.grid2{display:grid;grid-template-columns:1fr 320px;gap:14px}
-@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+/* Quick presets */
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.preset{background:var(--s2);border:1px solid var(--bd);color:var(--tx2);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;transition:.15s}
+.preset:hover{border-color:var(--ac);color:var(--ac)}
+
+/* Results */
+.results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.results{grid-template-columns:1fr}}
 .panel{background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
-.ph{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ph{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
 .ph-title{font-size:13px;font-weight:600}
-
-/* Filters */
-.fbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
-.fbar input,.fbar select{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;min-width:0}
-.fbar input{flex:1}
-.fbar input:focus,.fbar select:focus{border-color:var(--ac)}
-
-/* Col picker */
-.cpick{padding:8px 14px;border-bottom:1px solid var(--bd);display:flex;flex-wrap:wrap;gap:5px;align-items:center}
-.cpick .lbl{color:var(--tx2);font-size:11px;margin-right:4px}
-.cpick span{cursor:pointer;padding:3px 9px;border-radius:5px;background:var(--s2);border:1px solid var(--bd);font-size:11px;transition:.15s}
-.cpick span.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ph-sub{font-size:11px;color:var(--tx2)}
 
 /* Table */
-.twrap{overflow:auto;max-height:360px}
+.twrap{overflow:auto;max-height:420px}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:var(--s2);padding:9px 11px;text-align:left;color:var(--tx2);font-weight:600;position:sticky;top:0;white-space:nowrap;cursor:pointer;user-select:none}
-th:hover{color:var(--ac)}
-th .sort{margin-left:4px;opacity:.5}
-td{padding:7px 11px;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{background:var(--s2);padding:9px 12px;text-align:left;color:var(--tx2);font-weight:600;position:sticky;top:0;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap}
 tr:hover td{background:var(--s2)}
 .nr{text-align:right;font-variant-numeric:tabular-nums}
-.empty{text-align:center;color:var(--tx2);padding:36px}
-
-/* Aggregation panel */
-.aggpanel{padding:12px 14px}
-.agg-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
-.agg-row label{font-size:11px;color:var(--tx2);display:block;margin-bottom:4px}
-.agg-row select{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:6px 10px;border-radius:7px;font-size:12px;outline:none}
-.aggbtn{background:var(--ac);color:#fff;border:none;padding:7px 16px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;align-self:flex-end}
-.aggbtn:hover{opacity:.85}
-.agg-result{overflow:auto;max-height:280px}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:var(--s2);color:var(--tx2)}
+.rank.g1{background:#ffd700;color:#000}
+.rank.g2{background:#c0c0c0;color:#000}
+.rank.g3{background:#cd7f32;color:#fff}
+.empty{text-align:center;color:var(--tx2);padding:40px;font-size:13px}
 
 /* Chart */
-.cpanel{margin-top:14px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px}
-.ctbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.ctbar select{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:5px 9px;border-radius:7px;font-size:12px;outline:none}
-.cbtn{background:var(--s2);border:1px solid var(--bd);color:var(--tx2);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;transition:.15s}
-.cbtn:hover,.cbtn.on{background:var(--ac);border-color:var(--ac);color:#fff}
-canvas{max-height:300px}
+.chart-wrap{padding:16px}
+canvas{max-height:350px}
 
-.badge{background:var(--ac);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
-.tag{display:inline-block;background:rgba(108,138,255,.15);color:var(--ac);padding:1px 7px;border-radius:4px;font-size:11px}
+/* Column mapper */
+.mapper{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.mapper h3{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px}
+.mrow{display:flex;gap:10px;flex-wrap:wrap}
+.mfield{display:flex;flex-direction:column;gap:3px}
+.mfield label{font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.4px}
+.mfield select{background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:5px 8px;border-radius:6px;font-size:11px;outline:none;min-width:120px}
+
+.tip{background:rgba(108,138,255,.08);border:1px solid rgba(108,138,255,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--tx2);margin-bottom:12px}
+.tip strong{color:var(--ac)}
 </style>
 </head>
 <body>
 <div class="hdr">
-  <span>💊</span>
-  <h1>의약품 데이터 분석기</h1>
-  <span class="badge">v2</span>
+  <span>💊</span><h1>의약품 데이터 분석기</h1><span class="badge">v3</span>
+  <span id="fileNameBadge" style="margin-left:auto;font-size:11px;color:var(--tx2)"></span>
 </div>
 <div class="wrap">
 
@@ -99,126 +91,130 @@ canvas{max-height:300px}
 <div id="upSec">
   <div class="upzone" id="dz" onclick="fi.click()">
     <div style="font-size:44px">📂</div>
-    <h2>엑셀 파일 업로드</h2>
-    <p>.xlsx / .xls 파일을 드래그하거나 클릭하여 선택</p>
+    <h2 style="font-size:17px;margin:10px 0 6px">엑셀 파일 업로드</h2>
+    <p style="color:var(--tx2);font-size:12px">.xlsx / .xls 드래그 또는 클릭</p>
     <button class="upbtn" onclick="event.stopPropagation();fi.click()">파일 선택</button>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls">
 </div>
 
-<!-- Header row selector -->
-<div class="hrow-bar" id="hrowBar" style="display:none">
-  <label>헤더 행 번호:</label>
-  <input type="number" id="hrowNum" value="1" min="1" max="20" style="width:60px">
-  <label>시트:</label>
-  <select id="sheetSel"></select>
-  <button onclick="applySheet()">적용</button>
-  <span style="color:var(--tx2);font-size:11px">※ 헤더가 2행 이하면 숫자를 바꾸고 적용 클릭</span>
-  <button onclick="document.getElementById('upSec').style.display='';document.getElementById('hrowBar').style.display='none';document.getElementById('dataSec').style.display='none'" style="margin-left:auto;background:var(--s2);border:1px solid var(--bd);color:var(--tx2);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px">다른 파일</button>
+<!-- Config -->
+<div class="cfgbar" id="cfgBar" style="display:none">
+  <label>시트:</label><select id="sheetSel" onchange="loadSheet()"></select>
+  <label>헤더 행:</label><input type="number" id="hrowNum" value="1" min="1" max="20" style="width:55px">
+  <button class="cfgbtn" onclick="loadSheet()">적용</button>
+  <button onclick="resetAll()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx2);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;margin-left:auto">다른 파일</button>
 </div>
 
-<!-- Data -->
-<div id="dataSec" style="display:none">
-  <div class="stats" id="statsRow"></div>
+<!-- Main -->
+<div id="mainSec" style="display:none">
 
-  <div class="grid2">
-    <!-- Table + Agg -->
-    <div>
-      <div class="panel">
-        <div class="ph">
-          <span class="ph-title">📋 데이터 테이블</span>
-          <span id="rowCnt" style="color:var(--tx2);font-size:12px"></span>
-        </div>
-        <div class="fbar">
-          <input id="srch" placeholder="🔍 전체 검색..." oninput="applyFilter()">
-          <select id="fCol" onchange="renderFVal()"><option value="">— 컬럼 필터 —</option></select>
-          <select id="fVal" onchange="applyFilter()"><option value="">전체</option></select>
-          <select id="sortCol" onchange="applyFilter()"><option value="">— 정렬 기준 —</option></select>
-          <select id="sortDir" onchange="applyFilter()"><option value="asc">오름차순</option><option value="desc">내림차순</option></select>
-        </div>
-        <div class="cpick" id="cpick"></div>
-        <div class="twrap" id="twrap"></div>
-      </div>
+  <!-- Column Mapper -->
+  <div class="mapper" id="mapper">
+    <h3>🔧 컬럼 매핑 — 아래에서 각 역할에 해당하는 컬럼을 지정하세요</h3>
+    <div class="mrow">
+      <div class="mfield"><label>회사명</label><select id="mCompany"></select></div>
+      <div class="mfield"><label>제품명</label><select id="mProduct"></select></div>
+      <div class="mfield"><label>단일/복합제</label><select id="mType"></select></div>
+      <div class="mfield"><label>ETC/OTC</label><select id="mEtcOtc"></select></div>
+      <div class="mfield"><label>ATC4</label><select id="mAtc"></select></div>
+      <div class="mfield"><label>급여구분</label><select id="mInsurance"></select></div>
+      <div class="mfield"><label>성분명</label><select id="mIngredient"></select></div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--tx2)">
+      💡 연도별 매출/판매량 컬럼은 아래에서 자동 감지됩니다.
+      감지된 연도 컬럼: <span id="detectedYears" style="color:var(--gr)">—</span>
+    </div>
+  </div>
 
-      <!-- Aggregation -->
-      <div class="panel" style="margin-top:14px">
-        <div class="ph"><span class="ph-title">🔢 집계 분석</span></div>
-        <div class="aggpanel">
-          <div class="agg-row">
-            <div><label>그룹 기준 (행)</label><select id="aggGroup"><option value="">선택</option></select></div>
-            <div><label>집계 컬럼</label><select id="aggVal"><option value="">선택</option></select></div>
-            <div><label>집계 방식</label>
-              <select id="aggFunc">
-                <option value="sum">합계 (SUM)</option>
-                <option value="avg">평균 (AVG)</option>
-                <option value="count">개수 (COUNT)</option>
-                <option value="max">최대값 (MAX)</option>
-                <option value="min">최소값 (MIN)</option>
-              </select>
-            </div>
-            <div><label>정렬</label>
-              <select id="aggSort"><option value="desc">높은순</option><option value="asc">낮은순</option></select>
-            </div>
-            <button class="aggbtn" onclick="runAgg()">집계 실행</button>
-            <button class="aggbtn" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx2)" onclick="renderAggChart()">📊 차트로 보기</button>
-          </div>
-          <div class="agg-result" id="aggResult"></div>
-        </div>
+  <!-- Query Builder -->
+  <div class="qbuilder">
+    <h3>🔍 분석 조건 설정</h3>
+    <div class="qrow">
+      <div class="qfield" style="min-width:150px">
+        <label>회사명 필터</label>
+        <input type="text" id="qCompany" placeholder="예: 신풍제약 (빈칸=전체)">
       </div>
-
-      <!-- Chart -->
-      <div class="cpanel" id="chartPanel" style="display:none">
-        <div class="ph" style="padding:0 0 10px 0;border:none"><span class="ph-title">📊 차트</span></div>
-        <div class="ctbar">
-          <select id="cxCol"></select>
-          <select id="cyCol"></select>
-          <button class="cbtn on" id="bBar" onclick="setCT('bar')">막대</button>
-          <button class="cbtn" id="bLine" onclick="setCT('line')">꺾은선</button>
-          <button class="cbtn" id="bPie" onclick="setCT('pie')">파이</button>
-          <button class="cbtn" id="bDnt" onclick="setCT('doughnut')">도넛</button>
-          <button class="cbtn" style="margin-left:auto" onclick="renderChart()">🔄 갱신</button>
-        </div>
-        <canvas id="myChart"></canvas>
+      <div class="qfield">
+        <label>단일/복합제</label>
+        <select id="qType"><option value="">전체</option></select>
       </div>
+      <div class="qfield">
+        <label>ETC/OTC</label>
+        <select id="qEtcOtc"><option value="">전체</option></select>
+      </div>
+      <div class="qfield">
+        <label>ATC4 필터</label>
+        <input type="text" id="qAtc" placeholder="빈칸=전체">
+      </div>
+      <div class="qfield">
+        <label>급여구분</label>
+        <select id="qInsurance"><option value="">전체</option></select>
+      </div>
+      <div class="qfield">
+        <label>기준 연도</label>
+        <select id="qYear"></select>
+      </div>
+      <div class="qfield">
+        <label>정렬 기준</label>
+        <select id="qMetric"><option value="sales">매출액</option><option value="unit">판매량(Unit)</option></select>
+      </div>
+      <div class="qfield">
+        <label>TOP N</label>
+        <select id="qTopN">
+          <option value="5">TOP 5</option>
+          <option value="10" selected>TOP 10</option>
+          <option value="20">TOP 20</option>
+          <option value="30">TOP 30</option>
+          <option value="50">TOP 50</option>
+        </select>
+      </div>
+      <button class="runbtn" onclick="runQuery()">▶ 분석 실행</button>
     </div>
 
-    <!-- Right: Top N -->
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="panel">
-        <div class="ph"><span class="ph-title">🏆 TOP N 분석</span></div>
-        <div class="aggpanel">
-          <div class="agg-row" style="flex-direction:column;gap:8px">
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <div><label>기준 컬럼</label><select id="topCol"></select></div>
-              <div><label>표시 이름</label><select id="topLabel"></select></div>
-              <div><label>N 개</label><input type="number" id="topN" value="10" min="1" max="100" style="width:60px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:6px;border-radius:7px;font-size:12px;outline:none"></div>
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="aggbtn" onclick="runTop('desc')">▼ 상위 TOP N</button>
-              <button class="aggbtn" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx2)" onclick="runTop('asc')">▲ 하위 TOP N</button>
-            </div>
-          </div>
-          <div id="topResult" class="agg-result"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ph"><span class="ph-title">📈 수치 통계</span></div>
-        <div class="aggpanel">
-          <div class="agg-row">
-            <div><label>컬럼 선택</label><select id="statCol"></select></div>
-            <button class="aggbtn" onclick="runStat()">통계 보기</button>
-          </div>
-          <div id="statResult"></div>
-        </div>
-      </div>
+    <!-- Presets -->
+    <div class="presets">
+      <span style="font-size:11px;color:var(--tx2);align-self:center">빠른 분석:</span>
+      <span class="preset" onclick="applyPreset('shinpoong_complex')">신풍제약 복합제 TOP10</span>
+      <span class="preset" onclick="applyPreset('etc_top10')">ETC 전체 TOP10</span>
+      <span class="preset" onclick="applyPreset('otc_top10')">OTC 전체 TOP10</span>
+      <span class="preset" onclick="applyPreset('insured_top10')">급여 TOP10</span>
+      <span class="preset" onclick="applyPreset('unit_top10')">판매량 TOP10</span>
     </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsArea" style="display:none">
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title" id="resultTitle">분석 결과</span>
+        <span class="ph-sub" id="resultSub"></span>
+      </div>
+      <div class="twrap" id="resultTable"></div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">📈 연도별 매출 추이</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="setChartMode('line')" id="btnLine" style="background:var(--ac);color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">꺾은선</button>
+          <button onclick="setChartMode('bar')" id="btnBar" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx2);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">막대</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Extra: Total by year -->
+  <div id="yearSummaryPanel" style="display:none;margin-top:14px" class="panel">
+    <div class="ph"><span class="ph-title">📊 필터 조건 전체 — 연도별 합계</span></div>
+    <div class="chart-wrap"><canvas id="yearSumChart"></canvas></div>
   </div>
 </div>
 </div>
 
 <script>
-let wb=null, allData=[], filtData=[], cols=[], visCols=[], chartInst=null, cType='bar';
+let wb=null, allData=[], cols=[], yearSalesCols=[], yearUnitCols=[], chartInst=null, chartInst2=null, cMode='line';
+let lastTopProducts=[], lastYears=[];
 
 const fi=document.getElementById('fi');
 const dz=document.getElementById('dz');
@@ -229,6 +225,7 @@ fi.addEventListener('change',e=>loadFile(e.target.files[0]));
 
 function loadFile(f){
   if(!f)return;
+  document.getElementById('fileNameBadge').textContent='📄 '+f.name;
   const r=new FileReader();
   r.onload=e=>{
     wb=XLSX.read(e.target.result,{type:'array'});
@@ -236,223 +233,239 @@ function loadFile(f){
     const sel=document.getElementById('sheetSel');
     sel.innerHTML=ss.map(s=>`<option value="${s}">${s}</option>`).join('');
     document.getElementById('upSec').style.display='none';
-    document.getElementById('hrowBar').style.display='flex';
-    applySheet();
+    document.getElementById('cfgBar').style.display='flex';
+    loadSheet();
   };
   r.readAsArrayBuffer(f);
 }
 
-function applySheet(){
+function loadSheet(){
   const sheet=document.getElementById('sheetSel').value||wb.SheetNames[0];
   const hrow=parseInt(document.getElementById('hrowNum').value||1)-1;
   const ws=wb.Sheets[sheet];
-  // Use header row offset
-  const raw=XLSX.utils.sheet_to_json(ws,{defval:'',range:hrow});
-  if(!raw.length){alert('데이터가 없습니다. 헤더 행을 확인하세요.');return;}
-  allData=raw;
-  cols=Object.keys(raw[0]).filter(c=>!c.startsWith('__EMPTY')||raw.some(r=>r[c]!==''));
-  // If still all empty names, use as-is
-  if(!cols.length)cols=Object.keys(raw[0]);
-  visCols=[...cols];
-  filtData=[...allData];
-  document.getElementById('dataSec').style.display='';
-  initControls();
-  renderAll();
+  allData=XLSX.utils.sheet_to_json(ws,{defval:'',range:hrow});
+  if(!allData.length){alert('데이터 없음 — 헤더 행 번호를 확인하세요');return;}
+  cols=Object.keys(allData[0]);
+  detectYearCols();
+  initMapper();
+  initQueryFilters();
+  document.getElementById('mainSec').style.display='';
 }
 
-function initControls(){
-  // filter col
-  const fc=document.getElementById('fCol');
-  fc.innerHTML='<option value="">— 컬럼 필터 —</option>'+cols.map(c=>`<option>${c}</option>`).join('');
-  // sort
-  const sc=document.getElementById('sortCol');
-  sc.innerHTML='<option value="">— 정렬 기준 —</option>'+cols.map(c=>`<option>${c}</option>`).join('');
-  // agg
-  const ag=document.getElementById('aggGroup'),av=document.getElementById('aggVal');
-  ag.innerHTML='<option value="">선택</option>'+cols.map(c=>`<option>${c}</option>`).join('');
-  const numC=cols.filter(c=>allData.some(r=>typeof r[c]==='number'));
-  av.innerHTML='<option value="">선택</option>'+(numC.length?numC:cols).map(c=>`<option>${c}</option>`).join('');
-  // top
-  const tc=document.getElementById('topCol'),tl=document.getElementById('topLabel');
-  tc.innerHTML=(numC.length?numC:cols).map(c=>`<option>${c}</option>`).join('');
-  tl.innerHTML=cols.map(c=>`<option>${c}</option>`).join('');
-  // stat
-  document.getElementById('statCol').innerHTML=(numC.length?numC:cols).map(c=>`<option>${c}</option>`).join('');
-  // chart
-  document.getElementById('cxCol').innerHTML=cols.map(c=>`<option>${c}</option>`).join('');
-  document.getElementById('cyCol').innerHTML=(numC.length?numC:cols).map(c=>`<option>${c}</option>`).join('');
+function detectYearCols(){
+  // Detect columns that look like "2021매출", "2022_sales", "2023 unit" etc.
+  yearSalesCols=[];yearUnitCols=[];
+  cols.forEach(c=>{
+    const cl=c.toString().toLowerCase();
+    const hasYear=/20[12]\d/.test(c);
+    if(!hasYear)return;
+    if(/unit|판매량|수량|qty/i.test(cl)) yearUnitCols.push(c);
+    else if(/매출|sales|amt|금액|amount/i.test(cl)||(/20[12]\d/.test(c)&&!/(unit|판매량|수량|qty)/i.test(cl))) yearSalesCols.push(c);
+  });
+  // Fallback: if nothing found, group numeric cols with years
+  if(!yearSalesCols.length&&!yearUnitCols.length){
+    const numCols=cols.filter(c=>allData.slice(0,10).some(r=>typeof r[c]==='number'&&r[c]>0));
+    yearSalesCols=numCols.filter(c=>/20[12]\d/.test(c));
+  }
+  document.getElementById('detectedYears').textContent=
+    '매출: ['+yearSalesCols.join(', ')+']  판매량: ['+yearUnitCols.join(', ')+']';
+  // Populate year selector
+  const years=[...new Set([...yearSalesCols,...yearUnitCols].map(c=>c.match(/20[12]\d/)?.[0]).filter(Boolean))].sort();
+  const ySel=document.getElementById('qYear');
+  ySel.innerHTML=years.map(y=>`<option value="${y}">${y}년</option>`).join('');
+  if(years.length)ySel.value=years[years.length-1];
+  lastYears=years;
 }
 
-function renderAll(){renderCpick();renderTable(filtData);renderStats();renderChart();}
-
-function renderCpick(){
-  document.getElementById('cpick').innerHTML='<span class="lbl">표시 컬럼:</span>'
-    +cols.map(c=>`<span class="${visCols.includes(c)?'on':''}" onclick="toggleCol('${CSS.escape(c)}')">${c}</span>`).join('');
+function initMapper(){
+  const optAll='<option value="">— 선택 —</option>'+cols.map(c=>`<option value="${c}">${c}</option>`).join('');
+  ['mCompany','mProduct','mType','mEtcOtc','mAtc','mInsurance','mIngredient'].forEach(id=>{
+    document.getElementById(id).innerHTML=optAll;
+  });
+  // Auto-detect
+  const auto={
+    mCompany:['회사','company','mfr','제조','audit'],
+    mProduct:['제품명','product','품명','drug'],
+    mType:['단일','복합','type','제형'],
+    mEtcOtc:['etc','otc'],
+    mAtc:['atc'],
+    mInsurance:['급여','insur','보험'],
+    mIngredient:['성분','ingredient','ingred']
+  };
+  Object.entries(auto).forEach(([id,kws])=>{
+    const match=cols.find(c=>kws.some(k=>c.toString().toLowerCase().includes(k)));
+    if(match)document.getElementById(id).value=match;
+  });
 }
-function toggleCol(c){
-  const real=cols.find(x=>CSS.escape(x)===c)||c;
-  if(visCols.includes(real)){if(visCols.length>1)visCols=visCols.filter(x=>x!==real)}
-  else visCols.push(real);
-  renderCpick();renderTable(filtData);
+
+function initQueryFilters(){
+  const typeCol=document.getElementById('mType').value;
+  const etcCol=document.getElementById('mEtcOtc').value;
+  const insCol=document.getElementById('mInsurance').value;
+  const fill=(selId,col)=>{
+    const sel=document.getElementById(selId);
+    if(!col){sel.innerHTML='<option value="">전체</option>';return;}
+    const uniq=[...new Set(allData.map(r=>r[col]).filter(v=>v!=''))].sort();
+    sel.innerHTML='<option value="">전체</option>'+uniq.map(v=>`<option>${v}</option>`).join('');
+  };
+  fill('qType',typeCol);
+  fill('qEtcOtc',etcCol);
+  fill('qInsurance',insCol);
 }
 
-function renderFVal(){
-  const col=document.getElementById('fCol').value;
-  const sv=document.getElementById('fVal');
-  if(!col){sv.innerHTML='<option value="">전체</option>';return;}
-  const uniq=[...new Set(allData.map(r=>r[col]))].sort();
-  sv.innerHTML='<option value="">전체</option>'+uniq.slice(0,200).map(v=>`<option>${v}</option>`).join('');
-  applyFilter();
+function getCol(id){return document.getElementById(id).value}
+
+function applyPreset(p){
+  const year=document.getElementById('qYear').value||lastYears[lastYears.length-1];
+  if(p==='shinpoong_complex'){
+    document.getElementById('qCompany').value='신풍';
+    document.getElementById('qMetric').value='sales';
+    // Try to set 복합제
+    const typeCol=getCol('mType');
+    if(typeCol){const opts=[...document.getElementById('qType').options].map(o=>o.value);const m=opts.find(o=>o.includes('복합'));if(m)document.getElementById('qType').value=m;}
+  } else if(p==='etc_top10'){
+    document.getElementById('qCompany').value='';
+    const etcOpts=[...document.getElementById('qEtcOtc').options].map(o=>o.value);
+    const m=etcOpts.find(o=>o.toUpperCase()==='ETC'||o.includes('전문'));
+    if(m)document.getElementById('qEtcOtc').value=m;
+    document.getElementById('qMetric').value='sales';
+  } else if(p==='otc_top10'){
+    document.getElementById('qCompany').value='';
+    const otcOpts=[...document.getElementById('qEtcOtc').options].map(o=>o.value);
+    const m=otcOpts.find(o=>o.toUpperCase()==='OTC'||o.includes('일반'));
+    if(m)document.getElementById('qEtcOtc').value=m;
+  } else if(p==='insured_top10'){
+    document.getElementById('qCompany').value='';
+    const iOpts=[...document.getElementById('qInsurance').options].map(o=>o.value);
+    const m=iOpts.find(o=>o.includes('급여')||o==='Y');
+    if(m)document.getElementById('qInsurance').value=m;
+  } else if(p==='unit_top10'){
+    document.getElementById('qMetric').value='unit';
+  }
+  runQuery();
 }
 
-function applyFilter(){
-  const q=document.getElementById('srch').value.toLowerCase();
-  const fc=document.getElementById('fCol').value, fv=document.getElementById('fVal').value;
-  const sc=document.getElementById('sortCol').value, sd=document.getElementById('sortDir').value;
-  filtData=allData.filter(r=>{
-    if(q&&!Object.values(r).some(v=>String(v).toLowerCase().includes(q)))return false;
-    if(fc&&fv&&String(r[fc])!==fv)return false;
+function runQuery(){
+  const companyQ=document.getElementById('qCompany').value.trim();
+  const typeQ=document.getElementById('qType').value;
+  const etcQ=document.getElementById('qEtcOtc').value;
+  const atcQ=document.getElementById('qAtc').value.trim();
+  const insQ=document.getElementById('qInsurance').value;
+  const year=document.getElementById('qYear').value;
+  const metric=document.getElementById('qMetric').value;
+  const topN=parseInt(document.getElementById('qTopN').value);
+
+  const cComp=getCol('mCompany'), cProd=getCol('mProduct'), cType=getCol('mType');
+  const cEtc=getCol('mEtcOtc'), cAtc=getCol('mAtc'), cIns=getCol('mInsurance');
+
+  // Find year cols
+  const salesCol=yearSalesCols.find(c=>c.toString().includes(year))||yearSalesCols[yearSalesCols.length-1];
+  const unitCol=yearUnitCols.find(c=>c.toString().includes(year))||yearUnitCols[yearUnitCols.length-1];
+
+  // Filter
+  let filtered=allData.filter(r=>{
+    if(companyQ&&cComp&&!String(r[cComp]||'').includes(companyQ))return false;
+    if(typeQ&&cType&&String(r[cType])!==typeQ)return false;
+    if(etcQ&&cEtc&&String(r[cEtc])!==etcQ)return false;
+    if(atcQ&&cAtc&&!String(r[cAtc]||'').includes(atcQ))return false;
+    if(insQ&&cIns&&String(r[cIns])!==insQ)return false;
     return true;
   });
-  if(sc){
-    filtData.sort((a,b)=>{
-      const av=a[sc],bv=b[sc];
-      if(typeof av==='number'&&typeof bv==='number')return sd==='asc'?av-bv:bv-av;
-      return sd==='asc'?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av));
+
+  // Sort by metric
+  const sortCol=metric==='unit'?unitCol:salesCol;
+  if(sortCol){filtered.sort((a,b)=>(Number(b[sortCol])||0)-(Number(a[sortCol])||0));}
+
+  const top=filtered.slice(0,topN);
+
+  // Render table
+  const metricLabel=metric==='unit'?'판매량(Unit)':'매출액(원)';
+  const dispCol=metric==='unit'?unitCol:salesCol;
+  document.getElementById('resultTitle').textContent=`${year}년 기준 TOP ${topN}`;
+  document.getElementById('resultSub').textContent=`총 ${filtered.length.toLocaleString()}개 중 상위 ${top.length}개`;
+  document.getElementById('resultTable').innerHTML=`<table><thead><tr>
+    <th>순위</th>
+    ${cProd?`<th>제품명</th>`:''}
+    ${cComp?`<th>회사명</th>`:''}
+    ${cType?`<th>분류</th>`:''}
+    ${dispCol?`<th class="nr">${metricLabel}</th>`:''}
+  </tr></thead><tbody>`+top.map((r,i)=>`<tr>
+    <td><span class="rank ${i===0?'g1':i===1?'g2':i===2?'g3':''}">${i+1}</span></td>
+    ${cProd?`<td><strong>${r[cProd]||'—'}</strong></td>`:''}
+    ${cComp?`<td style="color:var(--tx2)">${r[cComp]||'—'}</td>`:''}
+    ${cType?`<td><span style="background:rgba(108,138,255,.15);color:var(--ac);padding:1px 7px;border-radius:4px;font-size:11px">${r[cType]||'—'}</span></td>`:''}
+    ${dispCol?`<td class="nr"><strong>${(Number(r[dispCol])||0).toLocaleString()}</strong></td>`:''}
+  </tr>`).join('')+'</tbody></table>';
+
+  // Trend chart data
+  lastTopProducts=top;
+  renderTrendChart(top, cProd, metric);
+  renderYearSummary(filtered, metric);
+  document.getElementById('resultsArea').style.display='grid';
+  document.getElementById('yearSummaryPanel').style.display='';
+  document.getElementById('resultsArea').scrollIntoView({behavior:'smooth'});
+}
+
+function renderTrendChart(products, cProd, metric){
+  const years=lastYears;
+  const getCols=y=>metric==='unit'
+    ?yearUnitCols.filter(c=>c.toString().includes(y))
+    :yearSalesCols.filter(c=>c.toString().includes(y));
+
+  const datasets=products.map((r,i)=>{
+    const label=cProd?String(r[cProd]||`제품${i+1}`):`제품${i+1}`;
+    const data=years.map(y=>{
+      const cs=getCols(y);
+      return cs.reduce((s,c)=>s+(Number(r[c])||0),0);
     });
-  }
-  renderTable(filtData);
-}
-
-function renderTable(data){
-  document.getElementById('rowCnt').textContent=data.length.toLocaleString()+'행';
-  const w=document.getElementById('twrap');
-  if(!data.length){w.innerHTML='<div class="empty">데이터가 없습니다</div>';return;}
-  const vc=visCols;
-  w.innerHTML=`<table><thead><tr>${vc.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`
-    +data.slice(0,500).map(r=>`<tr>${vc.map(c=>{const v=r[c];const n=typeof v==='number';return`<td class="${n?'nr':''}">${n?v.toLocaleString():v??''}</td>`}).join('')}</tr>`).join('')
-    +'</tbody></table>'+(data.length>500?`<div style="text-align:center;padding:7px;font-size:11px;color:var(--tx2)">상위 500행 표시 (전체 ${data.length.toLocaleString()}행)</div>`:'');
-}
-
-function renderStats(){
-  const numC=cols.filter(c=>allData.some(r=>typeof r[c]==='number'));
-  const cards=[
-    {l:'총 행 수',v:allData.length.toLocaleString(),s:'전체 레코드'},
-    {l:'컬럼 수',v:cols.length,s:cols.slice(0,3).join(', ')+(cols.length>3?'...':'')},
-    ...numC.slice(0,3).map(c=>({
-      l:c+' 합계',
-      v:allData.reduce((s,r)=>s+(Number(r[c])||0),0).toLocaleString(),
-      s:'전체 합산'
-    }))
-  ];
-  document.getElementById('statsRow').innerHTML=cards.map(c=>`<div class="sc"><div class="sc-lbl">${c.l}</div><div class="sc-val">${c.v}</div><div class="sc-sub">${c.s}</div></div>`).join('');
-}
-
-// Aggregation
-function runAgg(){
-  const gc=document.getElementById('aggGroup').value;
-  const vc=document.getElementById('aggVal').value;
-  const fn=document.getElementById('aggFunc').value;
-  const sd=document.getElementById('aggSort').value;
-  if(!gc||!vc){alert('그룹 기준과 집계 컬럼을 선택하세요');return;}
-  const agg={};
-  const cnt={};
-  filtData.forEach(r=>{
-    const k=String(r[gc]??'(없음)');
-    const v=Number(r[vc])||0;
-    if(!agg[k]){agg[k]=0;cnt[k]=0;}
-    if(fn==='sum')agg[k]+=v;
-    else if(fn==='avg'){agg[k]+=v;cnt[k]++;}
-    else if(fn==='count')agg[k]++;
-    else if(fn==='max')agg[k]=Math.max(agg[k]||v,v);
-    else if(fn==='min')agg[k]=cnt[k]?Math.min(agg[k],v):v;
-    if(fn!=='count')cnt[k]++;
+    const hue=200+i*22;
+    return{label,data,borderColor:`hsl(${hue},70%,60%)`,backgroundColor:`hsla(${hue},70%,60%,.15)`,tension:.3,fill:cMode==='line',pointRadius:4,pointHoverRadius:6};
   });
-  if(fn==='avg')Object.keys(agg).forEach(k=>{agg[k]=cnt[k]?agg[k]/cnt[k]:0;});
-  let entries=Object.entries(agg).sort((a,b)=>sd==='desc'?b[1]-a[1]:a[1]-b[1]);
-  const fnLabel={sum:'합계',avg:'평균',count:'개수',max:'최대',min:'최소'};
-  document.getElementById('aggResult').innerHTML=`<table><thead><tr><th>${gc}</th><th class="nr">${vc} (${fnLabel[fn]})</th></tr></thead><tbody>`
-    +entries.map(([k,v])=>`<tr><td>${k}</td><td class="nr">${typeof v==='number'?v.toLocaleString(undefined,{maximumFractionDigits:2}):v}</td></tr>`).join('')+'</tbody></table>';
-  // store for chart
-  window._lastAgg={labels:entries.map(e=>e[0]),vals:entries.map(e=>e[1]),yLabel:vc+'('+fnLabel[fn]+')'};
-}
 
-function renderAggChart(){
-  if(!window._lastAgg){runAgg();}
-  if(!window._lastAgg)return;
-  const {labels,vals,yLabel}=window._lastAgg;
-  document.getElementById('chartPanel').style.display='';
-  document.getElementById('cxCol').disabled=true;
-  document.getElementById('cyCol').disabled=true;
-  drawChart(labels,vals,yLabel);
-  document.getElementById('chartPanel').scrollIntoView({behavior:'smooth'});
-}
-
-// Top N
-function runTop(dir){
-  const tc=document.getElementById('topCol').value;
-  const tl=document.getElementById('topLabel').value;
-  const n=parseInt(document.getElementById('topN').value)||10;
-  const sorted=[...filtData].sort((a,b)=>dir==='desc'?(Number(b[tc])||0)-(Number(a[tc])||0):(Number(a[tc])||0)-(Number(b[tc])||0));
-  const top=sorted.slice(0,n);
-  document.getElementById('topResult').innerHTML=`<table><thead><tr><th>#</th><th>${tl}</th><th class="nr">${tc}</th></tr></thead><tbody>`
-    +top.map((r,i)=>`<tr><td><span class="tag">${i+1}</span></td><td>${r[tl]??''}</td><td class="nr">${(Number(r[tc])||0).toLocaleString()}</td></tr>`).join('')+'</tbody></table>';
-}
-
-// Stat
-function runStat(){
-  const c=document.getElementById('statCol').value;
-  const vals=filtData.map(r=>Number(r[c])).filter(v=>!isNaN(v));
-  if(!vals.length){document.getElementById('statResult').innerHTML='<div class="empty">수치 데이터 없음</div>';return;}
-  const sum=vals.reduce((a,b)=>a+b,0);
-  const avg=sum/vals.length;
-  const sorted=[...vals].sort((a,b)=>a-b);
-  const med=sorted.length%2?sorted[Math.floor(sorted.length/2)]:(sorted[sorted.length/2-1]+sorted[sorted.length/2])/2;
-  const std=Math.sqrt(vals.reduce((s,v)=>s+(v-avg)**2,0)/vals.length);
-  const items=[['합계',sum],['평균',avg],['중앙값',med],['최대값',Math.max(...vals)],['최소값',Math.min(...vals)],['표준편차',std],['데이터 수',vals.length]];
-  document.getElementById('statResult').innerHTML=`<table>${items.map(([l,v])=>`<tr><td style="color:var(--tx2)">${l}</td><td class="nr"><strong>${typeof v==='number'?v.toLocaleString(undefined,{maximumFractionDigits:2}):v}</strong></td></tr>`).join('')}</table>`;
-}
-
-// Chart
-function setCT(t){
-  cType=t;
-  ['Bar','Line','Pie','Dnt'].forEach(x=>document.getElementById('b'+x).classList.toggle('on',x.toLowerCase().replace('dnt','doughnut')===t||('b'+x).toLowerCase().includes(t)));
-  document.getElementById('bBar').classList.toggle('on',t==='bar');
-  document.getElementById('bLine').classList.toggle('on',t==='line');
-  document.getElementById('bPie').classList.toggle('on',t==='pie');
-  document.getElementById('bDnt').classList.toggle('on',t==='doughnut');
-  renderChart();
-}
-
-function renderChart(customLabels,customVals,customYLabel){
-  document.getElementById('cxCol').disabled=false;
-  document.getElementById('cyCol').disabled=false;
-  const xc=document.getElementById('cxCol').value;
-  const yc=document.getElementById('cyCol').value;
-  if(!xc||!yc)return;
-  const agg={};
-  filtData.forEach(r=>{const k=String(r[xc]??'');agg[k]=(agg[k]||0)+(Number(r[yc])||0);});
-  let entries=Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,25);
-  drawChart(customLabels||entries.map(e=>e[0]),customVals||entries.map(e=>e[1]),customYLabel||yc);
-}
-
-function drawChart(labels,vals,yLabel){
-  document.getElementById('chartPanel').style.display='';
-  const colors=labels.map((_,i)=>`hsl(${215+i*15},65%,58%)`);
   if(chartInst)chartInst.destroy();
-  const ctx=document.getElementById('myChart').getContext('2d');
+  const ctx=document.getElementById('trendChart').getContext('2d');
   chartInst=new Chart(ctx,{
-    type:cType,
-    data:{labels,datasets:[{label:yLabel,data:vals,backgroundColor:colors,borderColor:colors.map(c=>c.replace('58%','45%')),borderWidth:1}]},
-    options:{
-      responsive:true,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-      scales:['bar','line'].includes(cType)?{
-        x:{ticks:{color:'#94a3b8',font:{size:10},maxRotation:45},grid:{color:'#2e3250'}},
-        y:{ticks:{color:'#94a3b8',callback:v=>v.toLocaleString()},grid:{color:'#2e3250'}}
-      }:{}
-    }
+    type:cMode,
+    data:{labels:years.map(y=>y+'년'),datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:10},boxWidth:12}}},
+      scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#2e3250'}},y:{ticks:{color:'#94a3b8',callback:v=>metric==='unit'?v.toLocaleString():v>=1e8?(v/1e8).toFixed(1)+'억':v.toLocaleString()},grid:{color:'#2e3250'}}}}
   });
+}
+
+function renderYearSummary(filtered, metric){
+  const years=lastYears;
+  const getCols=y=>metric==='unit'
+    ?yearUnitCols.filter(c=>c.toString().includes(y))
+    :yearSalesCols.filter(c=>c.toString().includes(y));
+  const totals=years.map(y=>filtered.reduce((s,r)=>s+getCols(y).reduce((ss,c)=>ss+(Number(r[c])||0),0),0));
+  if(chartInst2)chartInst2.destroy();
+  const ctx2=document.getElementById('yearSumChart').getContext('2d');
+  chartInst2=new Chart(ctx2,{
+    type:'bar',
+    data:{labels:years.map(y=>y+'년'),datasets:[{label:'연도별 합계',data:totals,backgroundColor:years.map((_,i)=>`hsl(${220+i*12},65%,55%)`),borderRadius:6}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8'}}},
+      scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#2e3250'}},y:{ticks:{color:'#94a3b8',callback:v=>metric==='unit'?v.toLocaleString():v>=1e8?(v/1e8).toFixed(0)+'억':v.toLocaleString()},grid:{color:'#2e3250'}}}}
+  });
+}
+
+function setChartMode(m){
+  cMode=m;
+  document.getElementById('btnLine').style.background=m==='line'?'var(--ac)':'var(--s2)';
+  document.getElementById('btnLine').style.color=m==='line'?'#fff':'var(--tx2)';
+  document.getElementById('btnBar').style.background=m==='bar'?'var(--ac)':'var(--s2)';
+  document.getElementById('btnBar').style.color=m==='bar'?'#fff':'var(--tx2)';
+  if(lastTopProducts.length)renderTrendChart(lastTopProducts,getCol('mProduct'),document.getElementById('qMetric').value);
+}
+
+function resetAll(){
+  wb=null;allData=[];cols=[];yearSalesCols=[];yearUnitCols=[];
+  document.getElementById('upSec').style.display='';
+  document.getElementById('cfgBar').style.display='none';
+  document.getElementById('mainSec').style.display='none';
+  document.getElementById('resultsArea').style.display='none';
+  document.getElementById('yearSummaryPanel').style.display='none';
+  fi.value='';
 }
 </script>
 </body>
